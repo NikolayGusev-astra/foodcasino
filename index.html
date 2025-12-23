@@ -946,6 +946,21 @@
         </div>
     </nav>
 
+    <!-- Скрытый аудио элемент для звука прокрутки колеса (Nightcall из Drive) -->
+    <audio id="spinAudio" preload="auto">
+        <!-- 
+            Для использования трека Nightcall из фильма Drive:
+            1. Скачайте файл nightcall.mp3 (первые 2 секунды трека)
+            2. Поместите его в папку foodcasino
+            3. Замените src ниже на: src="nightcall.mp3"
+            
+            Или используйте публичный URL на трек (если доступен)
+        -->
+        <source src="nightcall.mp3" type="audio/mpeg">
+        <source src="nightcall.ogg" type="audio/ogg">
+        <!-- Fallback на синтезированный звук, если файл не найден -->
+    </audio>
+
     <script>
         class FoodCasinoApp {
             constructor() {
@@ -958,6 +973,16 @@
                 this.historyList = document.getElementById('historyList');
                 this.recipeModal = document.getElementById('recipeModal');
                 this.closeModal = document.getElementById('closeModal');
+                this.spinAudio = document.getElementById('spinAudio');
+                
+                // URL или путь к аудио файлу Nightcall (первые 2 секунды)
+                // Можно указать локальный файл: 'nightcall.mp3'
+                // Или публичный URL: 'https://example.com/nightcall.mp3'
+                // По умолчанию используется локальный файл nightcall.mp3
+                if (this.spinAudio) {
+                    // Если нужно использовать другой источник, раскомментируйте и укажите URL:
+                    // this.spinAudio.src = 'https://your-url-here.com/nightcall.mp3';
+                }
                 
                 // Все рецепты, организованные по категориям
                 this.allFoodsByCategory = {
@@ -1411,23 +1436,41 @@
             
             playSpinSound() {
                 try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
-                    
-                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.1);
+                    if (this.spinAudio) {
+                        // Сбрасываем аудио на начало
+                        this.spinAudio.currentTime = 0;
+                        // Воспроизводим
+                        this.spinAudio.play();
+                        
+                        // Останавливаем через 2 секунды
+                        setTimeout(() => {
+                            if (this.spinAudio) {
+                                this.spinAudio.pause();
+                                this.spinAudio.currentTime = 0;
+                            }
+                        }, 2000);
+                    }
                 } catch (e) {
-                    // Silent fail for audio
+                    // Silent fail for audio - fallback to old method
+                    try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
+                        
+                        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.1);
+                    } catch (e2) {
+                        // Silent fail
+                    }
                 }
             }
             
